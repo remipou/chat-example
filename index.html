@@ -17,6 +17,7 @@
   <body>
     <ul id="messages"></ul>
     <form action="">
+      <button type="button" class="button-group" data-option1="yes" data-option2="no">YES/NO</button>
       <input id="m" autocomplete="off" /><button>Send</button>
     </form>
     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
@@ -24,16 +25,38 @@
     <script>
       $(function () {
         var socket = io();
+
         $('form').submit(function(){
           socket.emit('chat message', $('#m').val());
           $('#m').val('');
           return false;
         });
-        socket.on('chat message', function(msg){
-          $('#messages').append($('<li>').text(msg));
+
+        socket.on('chat message', function(res){
+          if (typeof res === 'object' && res.type === 'buttons') {
+            $('#messages').append($('<li>').html(res.content));
+          }
+          else {
+            $('#messages').append($('<li>').text(res));
+          }
           window.scrollTo(0, document.body.scrollHeight);
         });
+
+        $('.button-group').click(function() {
+          var b1 = '<button onclick="sendResponse(\'' + $(this).data('option1') + '\')">' + $(this).data('option1') + '</button>';
+          var b2 = '<button onclick="sendResponse(\'' + $(this).data('option2') + '\')">' + $(this).data('option2') + '</button>';
+          var message = {
+            "type": "buttons",
+            "content": b1 + b2
+          }
+          socket.emit('chat message', message);
+        });
       });
+
+      var sendResponse = function(text) {
+          var socket = io();
+          socket.emit('chat message', text);
+        }
     </script>
   </body>
 </html>
